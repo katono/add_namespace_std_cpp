@@ -22,20 +22,19 @@ bitset<
 pair<
 make_pair
 
-exception.*\)
-logic_error.*\)
-runtime_error.*\)
-bad_alloc.*\)
+exception
+logic_error
+runtime_error
+bad_alloc
 
 chrono
 
-thread \w+;
+thread
 this_thread
-mutex \w+;
-mutex>
-recursive_mutex \w+;
-recursive_timed_mutex \w+;
-timed_mutex \w+;
+mutex
+recursive_mutex
+recursive_timed_mutex
+timed_mutex
 try_to_lock
 lock_guard<
 unique_lock<

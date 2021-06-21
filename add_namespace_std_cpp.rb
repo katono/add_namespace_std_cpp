@@ -116,14 +116,23 @@ def add_std_namespace(file_name, count)
 			file << line
 			next
 		end
-		if line =~ /using\s+namespace\s+std\s*;/
+		if line =~ /using\s+namespace\s+std.*;/
 			next
 		end
 		$std_words.each {|w|
-			regex_w = Regexp.new('\b' + w)
+			word_tail = false
+			if w[-1] =~ /\w/
+				regex_w = Regexp.new('\b(' + w + ')\b([^\);,])')
+				word_tail = true
+			else
+				regex_w = Regexp.new('\b' + w)
+			end
 			if line =~ regex_w
-				s = w.match('\w+').to_s
-				line.gsub!(Regexp.new('\b' + s + '\b'), "std::" + s)
+				if word_tail
+					line.gsub!(regex_w, "std::" + $1 + $2)
+				else
+					line.gsub!(regex_w, "std::" + w)
+				end
 				line.gsub!(/std::std::/, "std::")
 			end
 		}
