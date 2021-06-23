@@ -79,6 +79,21 @@ def conv_c_header(include_line)
 	include_line
 end
 
+def add_std_line(line)
+	$std_words.each {|w|
+		if w[-1] =~ /\w/
+			regex_w = Regexp.new('(?<!std::|>|\.)\b' + w + '\b(?!\s*[;\),={\.-])')
+			regex_w2 = Regexp.new('(?<!std::|>|\.)(?<=<)\b' + w)
+			line = line.gsub(regex_w, "std::" + w)
+			line = line.gsub(regex_w2, "std::" + w)
+		else
+			regex_w = Regexp.new('(?<!std::)\b' + w)
+			line = line.gsub(regex_w, "std::" + w)
+		end
+	}
+	line
+end
+
 def add_std_namespace(file_name, count)
 	file = File.open(file_name, "r")
 	lines = []
@@ -111,6 +126,7 @@ def add_std_namespace(file_name, count)
 	end
 
 	file = File.open(file_name, "w")
+	in_block_comment = false
 	lines.each {|line|
 		if line =~ /#include/
 			file << line
@@ -119,14 +135,36 @@ def add_std_namespace(file_name, count)
 		if line =~ /using\s+namespace\s+std.*;/
 			next
 		end
-		$std_words.each {|w|
-			if w[-1] =~ /\w/
-				regex_w = Regexp.new('(?<!std::)\b(' + w + ')\b(?!\s*[;\),={.-])')
-			else
-				regex_w = Regexp.new('(?<!std::)\b' + w)
+		if in_block_comment
+			if line =~ /\*\//
+				in_block_comment = false
 			end
-			line.gsub!(regex_w, "std::" + w)
-		}
+			file << line
+			next
+		end
+		block_comment_idx = line =~ /\/\*.*/
+		if block_comment_idx
+			in_block_comment = true
+			if line =~ /\*\//
+				in_block_comment = false
+			end
+			l = line[0, block_comment_idx]
+			comment = line[block_comment_idx, line.length - block_comment_idx]
+			line = add_std_line(l)
+			line += comment
+			file << line
+			next
+		end
+		line_comment_idx = line =~ /\/\/.*/
+		if line_comment_idx
+			l = line[0, line_comment_idx]
+			comment = line[line_comment_idx, line.length - line_comment_idx]
+			line = add_std_line(l)
+			line += comment
+			file << line
+			next
+		end
+		line = add_std_line(line)
 		file << line
 	}
 	file.close
